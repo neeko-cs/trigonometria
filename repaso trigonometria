@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Trigonometría</title>
+    <!-- We will use Tailwind CSS for styling, loaded from a CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Custom classes for correct/incorrect feedback */
+        .correct {
+            background-color: #22c55e !important; /* green-500 */
+            color: white !important;
+            border-color: #16a34a !important; /* green-600 */
+        }
+
+        .incorrect {
+            background-color: #ef4444 !important; /* red-500 */
+            color: white !important;
+            border-color: #dc2626 !important; /* red-600 */
+        }
+        
+        /* Disabled button state */
+        .option:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+
+        /* Simple pulse animation for the title */
+        @keyframes pulse-light {
+            0%, 100% { color: #67e8f9; /* cyan-300 */ }
+            50% { color: #f0f9ff; /* sky-50 */ }
+        }
+        .title-pulse {
+            animation: pulse-light 2.5s infinite;
+        }
+
+        /* Custom scrollbar for notes */
+        .notes-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .notes-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b; /* slate-800 */
+            border-radius: 10px;
+        }
+        .notes-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569; /* slate-600 */
+            border-radius: 10px;
+        }
+        .notes-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* slate-500 */
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Main App Container -->
+    <div id="app" class="w-full max-w-xl bg-slate-800 shadow-2xl rounded-2xl p-6 md:p-10 transition-all duration-300">
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold mb-4 title-pulse">Quiz de Trigonometría</h1>
+            <p class="text-lg text-slate-300 mb-8">¡Pon a prueba tus conocimientos para el examen!</p>
+            <button id="start-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                Empezar Quiz
+            </button>
+            <!-- NUEVO BOTÓN DE APUNTES -->
+            <button id="notes-btn" class="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50">
+                Ver Apuntes
+            </button>
+        </div>
+
+        <!-- Quiz Screen (hidden by default) -->
+        <div id="quiz-screen" class="hidden">
+            <!-- Progress and Score Header -->
+            <div class="flex justify-between items-center mb-4">
+                <!-- NUEVO BOTÓN "SALIR" -->
+                <button id="exit-quiz-btn" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm">
+                    &larr; Salir del Quiz
+                </button>
+                <div class="text-right">
+                    <div id="progress" class="text-lg font-semibold text-slate-300">Pregunta 1 / 10</div>
+                    <div id="score" class="text-lg font-bold text-green-400">Puntos: 0</div>
+                </div>
+            </div>
+
+            <!-- Question Text -->
+            <h2 id="question-text" class="text-2xl md:text-3xl font-bold mb-6 min-h-[100px]">
+                Cargando pregunta...
+            </h2>
+
+            <!-- Options Container -->
+            <div id="options-container" class="space-y-3">
+                <!-- Option buttons will be dynamically inserted here -->
+            </div>
+            
+            <!-- Feedback Message -->
+            <div id="feedback" class="mt-6 text-center text-lg font-medium h-6"></div>
+
+            <!-- Next Question Button -->
+            <button id="next-btn" class="hidden w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                Siguiente
+            </button>
+        </div>
+
+        <!-- End Screen (hidden by default) -->
+        <div id="end-screen" class="hidden text-center">
+            <h2 class="text-3xl font-bold mb-4">¡Juego terminado!</h2>
+            <p class="text-5xl font-bold mb-2" id="final-score">0/10</p>
+            <p class="text-xl text-slate-300 mb-8" id="final-message">¡Buen intento!</p>
+            <button id="restart-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+                Jugar de nuevo
+            </button>
+        </div>
+
+        <!-- NUEVA PANTALLA DE APUNTES (hidden by default) -->
+        <div id="notes-screen" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-3xl font-bold text-purple-300">Resumen de Trigonometría</h2>
+                <button id="back-to-start-btn" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    Volver
+                </button>
+            </div>
+            
+            <!-- Contenido de los apuntes -->
+            <div class="text-left h-[500px] overflow-y-auto pr-2 space-y-4 text-slate-200 notes-scrollbar">
+                
+                <h3 class="font-bold text-xl text-purple-300 mt-4">1. Medida de ángulos</h3>
+                <p>Grados (°) y Radianes (rad). Equivalencia clave: <b>180° = π rad</b>.</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li>Para pasar de grados a radianes: radianes = grados * (π / 180°)</li>
+                    <li>Para pasar de radianes a grados: grados = radianes * (180° / π)</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">2. Razones trigonométricas (Triángulos Rectángulos)</h3>
+                <p>sen(α) = Opuesto / Hipotenusa (SOH)</p>
+                <p>cos(α) = Contiguo / Hipotenusa (CAH)</p>
+                <p>tan(α) = Opuesto / Contiguo (TOA)</p>
+                <p class="mt-2 font-semibold">Recíprocas:</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li>csc(α) = 1 / sen(α)</li>
+                    <li>sec(α) = 1 / cos(α)</li>
+                    <li>cot(α) = 1 / tan(α)</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">3. Relaciones entre razones</h3>
+                <ul class="list-disc list-inside ml-4">
+                    <li><b>Fundamental:</b> sen^2(α) + cos^2(α) = 1</li>
+                    <li><b>Tangente:</b> tan(α) = sen(α) / cos(α)</li>
+                    <li>1 + tan^2(α) = sec^2(α)</li>
+                    <li>1 + cot^2(α) = csc^2(α)</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">4. Razones de 30°, 45° y 60°</h3>
+                <p><b>30° (π/6):</b> sen=1/2, cos=√3/2, tan=√3/3</p>
+                <p><b>45° (π/4):</b> sen=√2/2, cos=√2/2, tan=1</p>
+                <p><b>60° (π/3):</b> sen=√3/2, cos=1/2, tan=√3</p>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">5. Razones de un ángulo cualquiera (Circunferencia)</h3>
+                <p>En un punto (x, y) de la circunferencia de radio 1:</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li><b>cos(α) = x</b></li>
+                    <li><b>sen(α) = y</b></li>
+                    <li><b>tan(α) = y / x</b></li>
+                </ul>
+                <p class="mt-2 font-semibold">Signos por cuadrante:</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li><b>I (+,+):</b> Todas positivas</li>
+                    <li><b>II (-,+):</b> Solo Seno positivo</li>
+                    <li><b>III (-,-):</b> Solo Tangente positiva</li>
+                    <li><b>IV (+,-):</b> Solo Coseno positivo</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">6. Fórmulas trigonométricas</h3>
+                <p class="font-semibold">Suma y Resta:</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li>sen(α ± β) = sen(α)cos(β) ± cos(α)sen(β)</li>
+                    <li>cos(α ± β) = cos(α)cos(β) ∓ sen(α)sen(β) (signo opuesto)</li>
+                </ul>
+                <p class="font-semibold mt-2">Ángulo Doble:</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li>sen(2α) = 2sen(α)cos(α)</li>
+                    <li>cos(2α) = cos^2(α) - sen^2(α)</li>
+                </ul>
+                <p class="font-semibold mt-2">Ángulo Mitad:</p>
+                <ul class="list-disc list-inside ml-4">
+                    <li>sen(α/2) = ± √((1 - cos(α)) / 2)</li>
+                    <li>cos(α/2) = ± √((1 + cos(α)) / 2)</li>
+                </ul>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">7. Ecuaciones trigonométricas</h3>
+                <p>Pasos: 1. Despejar la razón. 2. Hallar soluciones en [0, 360°]. 3. Añadir la periodicidad (+ 360°k o + 180°k para tan).</p>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">8. Resolución de triángulos RECTÁNGULOS</h3>
+                <p>Usar: SOH CAH TOA, Pitágoras (a^2 + b^2 = c^2) y Suma de ángulos (A + B = 90°).</p>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">9. Teorema del Seno (Triángulos NO rectángulos)</h3>
+                <p><b>a / sen(A) = b / sen(B) = c / sen(C)</b></p>
+                <p>Cuándo usar: Tienes un par (ángulo y lado opuesto) y otro dato (casos AAL, ALA, LLA).</p>
+
+                <h3 class="font-bold text-xl text-purple-300 mt-4">10. Teorema del Coseno (Triángulos NO rectángulos)</h3>
+                <p><b>a^2 = b^2 + c^2 - 2bc * cos(A)</b></p>
+                <p>Cuándo usar: No tienes un par (casos LAL o LLL).</p>
+                
+                <div class="h-8"></div> <!-- Espacio al final -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Game Logic -->
+    <script>
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const endScreen = document.getElementById('end-screen');
+        const notesScreen = document.getElementById('notes-screen'); // NUEVO
+
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const notesBtn = document.getElementById('notes-btn'); // NUEVO
+        const backToStartBtn = document.getElementById('back-to-start-btn'); // NUEVO
+        const exitQuizBtn = document.getElementById('exit-quiz-btn'); // NUEVO
+
+        const progressEl = document.getElementById('progress');
+        const scoreEl = document.getElementById('score');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainerEl = document.getElementById('options-container');
+        const feedbackEl = document.getElementById('feedback');
+
+        const finalScoreEl = document.getElementById('final-score');
+        const finalMessageEl = document.getElementById('final-message');
+
+        // Full Question Bank
+        // Using HTML entities: &deg; (°), &pi; (π), &radic; (√), <sup>2</sup> (²)
+        const questionBank = [
+            {
+                question: "¿Cuántos radianes son 180&deg;?",
+                options: ["&pi; rad", "2&pi; rad", "&pi;/2 rad"],
+                answer: "&pi; rad"
+            },
+            {
+                question: "¿Cuántos grados son &pi;/3 rad?",
+                options: ["45&deg;", "60&deg;", "90&deg;"],
+                answer: "60&deg;"
+            },
+            {
+                question: "En un triángulo rectángulo, el 'seno' de un ángulo es...",
+                options: ["Cateto Contiguo / Hipotenusa", "Cateto Opuesto / Hipotenusa", "Cateto Opuesto / Cateto Contiguo"],
+                answer: "Cateto Opuesto / Hipotenusa"
+            },
+            {
+                question: "Si el cateto opuesto es 3 y el contiguo es 4, ¿cuál es la 'tangente'?",
+                options: ["3/4", "4/3", "3/5"],
+                answer: "3/4"
+            },
+            {
+                question: "¿Cuál es la Identidad Trigonométrica Fundamental?",
+                options: ["sen(x) + cos(x) = 1", "tan(x) = sen(x) / cos(x)", "sen<sup>2</sup>(x) + cos<sup>2</sup>(x) = 1"],
+                answer: "sen<sup>2</sup>(x) + cos<sup>2</sup>(x) = 1"
+            },
+            {
+                question: "Si sen(x) = 0.6, ¿cuánto vale cos(x) en el Cuadrante I?",
+                options: ["0.8", "0.4", "0.6"],
+                answer: "0.8" // (Porque 0.6^2 + 0.8^2 = 0.36 + 0.64 = 1)
+            },
+            {
+                question: "¿Cuál es el valor exacto de cos(60&deg;)?",
+                options: ["1/2", "&radic;2 / 2", "&radic;3 / 2"],
+                answer: "1/2"
+            },
+            {
+                question: "¿Cuál es el valor exacto de sen(45&deg;)?",
+                options: ["1/2", "&radic;2 / 2", "1"],
+                answer: "&radic;2 / 2"
+            },
+            {
+                question: "¿Cuál es el valor exacto de tan(45&deg;)?",
+                options: ["1", "1/2", "0"],
+                answer: "1"
+            },
+            {
+                question: "¿En qué cuadrante es el Coseno negativo y el Seno positivo?",
+                options: ["II Cuadrante", "III Cuadrante", "IV Cuadrante"],
+                answer: "II Cuadrante"
+            },
+            {
+                question: "¿Qué signo tiene la Tangente en el III Cuadrante?",
+                options: ["Positivo", "Negativo", "No existe"],
+                answer: "Positivo"
+            },
+            {
+                question: "¿A qué ángulo del primer cuadrante equivale sen(150&deg;)?",
+                options: ["sen(30&deg;)", "sen(60&deg;)", "-sen(30&deg;)"],
+                answer: "sen(30&deg;)" // sen(180 - 30) = sen(30)
+            },
+            {
+                question: "La fórmula de sen(2x) es igual a...",
+                options: ["cos<sup>2</sup>(x) - sen<sup>2</sup>(x)", "2sen(x)cos(x)", "1 + tan<sup>2</sup>(x)"],
+                answer: "2sen(x)cos(x)"
+            },
+            {
+                question: "La fórmula de cos(&alpha; + &beta;) es...",
+                options: ["cos(&alpha;)cos(&beta;) + sen(&alpha;)sen(&beta;)", "sen(&alpha;)cos(&beta;) + cos(&alpha;)sen(&beta;)", "cos(&alpha;)cos(&beta;) - sen(&alpha;)sen(&beta;)"],
+                answer: "cos(&alpha;)cos(&beta;) - sen(&alpha;)sen(&beta;)"
+            },
+            {
+                question: "Una solución principal de la ecuación sen(x) = 1 es...",
+                options: ["x = 0&deg;", "x = 90&deg;", "x = 180&deg;"],
+                answer: "x = 90&deg;"
+            },
+            {
+                question: "Para resolver un triángulo RECTÁNGULO, usamos...",
+                options: ["Solo el Teorema del Seno", "SOH CAH TOA y Pitágoras", "Solo el Teorema del Coseno"],
+                answer: "SOH CAH TOA y Pitágoras"
+            },
+            {
+                question: "¿Qué teorema usarías si conoces los tres lados (LLL) de un triángulo NO rectángulo?",
+                options: ["Teorema del Seno", "Teorema del Coseno", "Teorema de Pitágoras"],
+                answer: "Teorema del Coseno"
+            },
+            {
+                question: "¿Qué teorema usarías si conoces un lado, su ángulo opuesto y otro ángulo (ALA o AAL)?",
+                options: ["Teorema del Seno", "Teorema del Coseno", "SOH CAH TOA"],
+                answer: "Teorema del Seno"
+            },
+            {
+                question: "La fórmula c<sup>2</sup> = a<sup>2</sup> + b<sup>2</sup> - 2ab&middot;cos(C) corresponde al...",
+                options: ["Teorema de Pitágoras", "Teorema del Seno", "Teorema del Coseno"],
+                answer: "Teorema del Coseno"
+            },
+            {
+                question: "¿Cuántas soluciones puede tener un triángulo en el caso ambiguo (LLA)?",
+                options: ["Solo 1", "0, 1, o 2", "Siempre 2"],
+                answer: "0, 1, o 2"
+            }
+            // --- NUEVAS PREGUNTAS AÑADIDAS ---
+            ,
+            {
+                question: "¿Cuántos grados son 5&pi;/6 rad?",
+                options: ["150&deg;", "120&deg;", "210&deg;"],
+                answer: "150&deg;"
+            },
+            {
+                question: "¿Cuántos radianes son 270&deg;?",
+                options: ["3&pi;/2 rad", "2&pi;/3 rad", "5&pi;/4 rad"],
+                answer: "3&pi;/2 rad"
+            },
+            {
+                question: "Si sen(&alpha;) = 5/13 y &alpha; está en Q1, ¿cuál es cos(&alpha;)?",
+                options: ["12/13", "8/13", "5/12"],
+                answer: "12/13" // Pitágoras: 5^2 + x^2 = 13^2 -> 25 + x^2 = 169 -> x^2 = 144 -> x=12
+            },
+            {
+                question: "Si tan(&alpha;) es positiva y sen(&alpha;) es negativo, ¿en qué cuadrante está &alpha;?",
+                options: ["III Cuadrante", "I Cuadrante", "IV Cuadrante"],
+                answer: "III Cuadrante"
+            },
+            {
+                question: "Calcula el valor de sec(60&deg;). (Pista: sec = 1/cos)",
+                options: ["2", "1/2", "&radic;2"],
+                answer: "2" // cos(60) = 1/2 -> 1 / (1/2) = 2
+            },
+            {
+                question: "Calcula el valor de csc(30&deg;). (Pista: csc = 1/sen)",
+                options: ["2", "1/2", "&radic;3"],
+                answer: "2" // sen(30) = 1/2 -> 1 / (1/2) = 2
+            },
+            {
+                question: "Simplifica la expresión: tan(x) &middot; cos(x)",
+                options: ["sen(x)", "cos(x)", "1"],
+                answer: "sen(x)" // (sen/cos) * cos = sen
+            },
+            {
+                question: "¿Cuál es el valor de sen(90&deg;)?",
+                options: ["1", "0", "-1"],
+                answer: "1"
+            },
+            {
+                question: "¿Cuál es el valor de cos(180&deg;)?",
+                options: ["-1", "0", "1"],
+                answer: "-1"
+            },
+            {
+                question: "¿Cuál es el valor de tan(180&deg;)?",
+                options: ["0", "1", "Indefinido"],
+                answer: "0" // sen(180)/cos(180) = 0 / -1 = 0
+            },
+            {
+                question: "¿En qué cuadrante(s) es la tangente negativa?",
+                options: ["II y IV", "II y III", "III y IV"],
+                answer: "II y IV"
+            },
+            {
+                question: "¿A qué equivale cos(-&alpha;)? (Función par/impar)",
+                options: ["cos(&alpha;)", "-cos(&alpha;)", "sen(&alpha;)"],
+                answer: "cos(&alpha;)"
+            },
+            {
+                question: "¿A qué equivale sen(-&alpha;)? (Función par/impar)",
+                options: ["-sen(&alpha;)", "sen(&alpha;)", "-cos(&alpha;)"],
+                answer: "-sen(&alpha;)"
+            },
+            {
+                question: "La reducción al primer cuadrante de cos(180&deg; + &alpha;) es...",
+                options: ["-cos(&alpha;)", "cos(&alpha;)", "sen(&alpha;)"],
+                answer: "-cos(&alpha;)"
+            },
+            {
+                question: "La fórmula 1 + cot<sup>2</sup>(x) es igual a...",
+                options: ["csc<sup>2</sup>(x)", "sec<sup>2</sup>(x)", "tan<sup>2</sup>(x)"],
+                answer: "csc<sup>2</sup>(x)"
+            },
+            {
+                question: "Las soluciones de tan(x) = 1 en [0, 360&deg;] son...",
+                options: ["45&deg; y 225&deg;", "45&deg; y 135&deg;", "Solo 45&deg;"],
+                answer: "45&deg; y 225&deg;"
+            },
+            {
+                question: "Si una escalera de 10m forma 60&deg; con el suelo, ¿qué altura alcanza? (sen(60) &approx; 0.866)",
+                options: ["8.66 m", "5 m", "10 m"],
+                answer: "8.66 m" // sen(60) = altura / 10 -> altura = 10 * sen(60)
+            },
+            {
+                question: "Para resolver un triángulo LAL (Lado-Ángulo-Lado) NO rectángulo, ¿con qué teorema DEBES empezar?",
+                options: ["Teorema del Coseno", "Teorema del Seno", "Teorema de Pitágoras"],
+                answer: "Teorema del Coseno"
+            },
+            {
+                question: "¿Cuál es el periodo (cada cuánto se repite) de la función y = sen(x)?",
+                options: ["360&deg; (2&pi; rad)", "180&deg; (&pi; rad)", "90&deg; (&pi;/2 rad)"],
+                answer: "360&deg; (2&pi; rad)"
+            },
+            {
+                question: "Si el punto P(-&radic;2/2, -&radic;2/2) está en el círculo unitario, ¿qué ángulo representa?",
+                options: ["225&deg;", "135&deg;", "315&deg;"],
+                answer: "225&deg;"
+            }
+            // --- 50 NUEVAS PREGUNTAS AÑADIDAS ---
+            ,
+            {
+                question: "¿Cuántos radianes son -60&deg;?",
+                options: ["-&pi;/3 rad", "&pi;/3 rad", "5&pi;/3 rad"],
+                answer: "-&pi;/3 rad"
+            },
+            {
+                question: "¿Cuántos grados son 7&pi;/4 rad?",
+                options: ["315&deg;", "225&deg;", "405&deg;"],
+                answer: "315&deg;"
+            },
+            {
+                question: "Un ángulo de 400&deg; es coterminal con...",
+                options: ["40&deg;", "20&deg;", "-40&deg;"],
+                answer: "40&deg;"
+            },
+            {
+                question: "Si cos(&alpha;) = 3/5 y &alpha; está en Q4, ¿cuál es sen(&alpha;)?",
+                options: ["-4/5", "4/5", "-3/5"],
+                answer: "-4/5"
+            },
+            {
+                question: "Si tan(&alpha;) = -1 y &alpha; está en Q2, ¿cuál es cos(&alpha;)?",
+                options: ["-&radic;2 / 2", "&radic;2 / 2", "1/2"],
+                answer: "-&radic;2 / 2"
+            },
+            {
+                question: "Calcula el valor de cot(45&deg;).",
+                options: ["1", "0", "Indefinido"],
+                answer: "1"
+            },
+            {
+                question: "Si sen(x) = 1/3, ¿cuál es el valor de csc(x)?",
+                options: ["3", "1/3", "-3"],
+                answer: "3"
+            },
+            {
+                question: "Si cos(x) = -1/2, ¿cuál es el valor de sec(x)?",
+                options: ["-2", "2", "1/2"],
+                answer: "-2"
+            },
+            {
+                question: "Simplifica: sen<sup>2</sup>(x) / (1 - cos(x))",
+                options: ["1 + cos(x)", "1", "sen(x)"],
+                answer: "1 + cos(x)"
+            },
+            {
+                question: "¿Cuál es el valor de sec(90&deg;)?",
+                options: ["Indefinido", "1", "0"],
+                answer: "Indefinido"
+            },
+            {
+                question: "¿Cuál es el valor de csc(180&deg;)?",
+                options: ["Indefinido", "-1", "0"],
+                answer: "Indefinido"
+            },
+            {
+                question: "¿Cuál es el valor de cos(270&deg;)?",
+                options: ["0", "1", "-1"],
+                answer: "0"
+            },
+            {
+                question: "¿Cuál es el valor de sen(360&deg;)?",
+                options: ["0", "1", "-1"],
+                answer: "0"
+            },
+            {
+                question: "La reducción al primer cuadrante de sen(360&deg; - &alpha;) es...",
+                options: ["-sen(&alpha;)", "sen(&alpha;)", "cos(&alpha;)"],
+                answer: "-sen(&alpha;)"
+            },
+            {
+                question: "La reducción al primer cuadrante de tan(180&deg; - &alpha;) es...",
+                options: ["-tan(&alpha;)", "tan(&alpha;)", "cot(&alpha;)"],
+                answer: "-tan(&alpha;)"
+            },
+            {
+                question: "La reducción al primer cuadrante de sen(90&deg; + &alpha;) es...",
+                options: ["cos(&alpha;)", "-sen(&alpha;)", "sen(&alpha;)"],
+                answer: "cos(&alpha;)"
+            },
+            {
+                question: "La reducción al primer cuadrante de cos(90&deg; - &alpha;) es... (cofunción)",
+                options: ["sen(&alpha;)", "cos(&alpha;)", "-cos(&alpha;)"],
+                answer: "sen(&alpha;)"
+            },
+            {
+                question: "¿A qué equivale tan(-&alpha;)? (Función par/impar)",
+                options: ["-tan(&alpha;)", "tan(&alpha;)", "cot(&alpha;)"],
+                answer: "-tan(&alpha;)"
+            },
+            {
+                question: "La fórmula 1 + tan<sup>2</sup>(x) es igual a...",
+                options: ["sec<sup>2</sup>(x)", "csc<sup>2</sup>(x)", "cos<sup>2</sup>(x)"],
+                answer: "sec<sup>2</sup>(x)"
+            },
+            {
+                question: "La fórmula de sen(&alpha; - &beta;) es...",
+                options: ["sen(&alpha;)cos(&beta;) - cos(&alpha;)sen(&beta;)", "sen(&alpha;)cos(&beta;) + cos(&alpha;)sen(&beta;)", "cos(&alpha;)cos(&beta;) - sen(&alpha;)sen(&beta;)"],
+                answer: "sen(&alpha;)cos(&beta;) - cos(&alpha;)sen(&beta;)"
+            },
+            {
+                question: "La fórmula de cos(2x) puede expresarse como...",
+                options: ["1 - 2sen<sup>2</sup>(x)", "2cos<sup>2</sup>(x) + 1", "2sen(x)"],
+                answer: "1 - 2sen<sup>2</sup>(x)"
+            },
+            {
+                question: "La fórmula de cos(2x) también puede expresarse como...",
+                options: ["2cos<sup>2</sup>(x) - 1", "1 - 2cos<sup>2</sup>(x)", "sen<sup>2</sup>(x) + 1"],
+                answer: "2cos<sup>2</sup>(x) - 1"
+            },
+            {
+                question: "Las soluciones de cos(x) = -1 en [0, 360&deg;] son...",
+                options: ["Solo 180&deg;", "90&deg; y 270&deg;", "0&deg; y 180&deg;"],
+                answer: "Solo 180&deg;"
+            },
+            {
+                question: "Las soluciones de sen(x) = -1/2 en [0, 360&deg;] son...",
+                options: ["210&deg; y 330&deg;", "150&deg; y 210&deg;", "30&deg; y 150&deg;"],
+                answer: "210&deg; y 330&deg;"
+            },
+            {
+                question: "Resuelve: 2cos(x) + 1 = 0 en [0, 360&deg;].",
+                options: ["120&deg; y 240&deg;", "60&deg; y 300&deg;", "150&deg; y 210&deg;"],
+                answer: "120&deg; y 240&deg;"
+            },
+            {
+                question: "Una solución para sen(2x) = 1 en [0, 180&deg;] es...",
+                options: ["x = 45&deg;", "x = 90&deg;", "x = 30&deg;"],
+                answer: "x = 45&deg;"
+            },
+            {
+                question: "Un árbol proyecta una sombra de 20m. El ángulo de elevación al sol es 30&deg;. ¿Altura del árbol?",
+                options: ["20 / &radic;3 m (aprox 11.5m)", "20 m", "10 m"],
+                answer: "20 / &radic;3 m (aprox 11.5m)"
+            },
+            {
+                question: "En un triángulo ABC, a=10, sen(A)=0.5, sen(B)=0.2. ¿Cuánto vale el lado b?",
+                options: ["4", "25", "5"],
+                answer: "4"
+            },
+            {
+                question: "En un triángulo ABC, a=5, b=8, C=60&deg;. ¿Cuánto vale el lado c? (cos(60)=0.5)",
+                options: ["7", "6.2", "9"],
+                answer: "7"
+            },
+            {
+                question: "¿Cuál es el periodo de la función y = tan(x)?",
+                options: ["180&deg; (&pi; rad)", "360&deg; (2&pi; rad)", "90&deg; (&pi;/2 rad)"],
+                answer: "180&deg; (&pi; rad)"
+            },
+            {
+                question: "¿Cuál es la amplitud de la función y = 3sen(x)?",
+                options: ["3", "1", "1/3"],
+                answer: "3"
+            },
+            {
+                question: "¿Qué identidad es esta: (a/sen(A)) = (b/sen(B))?",
+                options: ["Teorema del Seno", "Teorema del Coseno", "Teorema de la Tangente"],
+                answer: "Teorema del Seno"
+            },
+            {
+                question: "Si cot(&alpha;) = 4/3 y &alpha; está en Q3, ¿cuál es sen(&alpha;)?",
+                options: ["-3/5", "3/5", "-4/5"],
+                answer: "-3/5"
+            },
+            {
+                question: "Simplifica: (1 - sen<sup>2</sup>(x)) / cos(x)",
+                options: ["cos(x)", "sen(x)", "sec(x)"],
+                answer: "cos(x)"
+            },
+            {
+                question: "La fórmula de tan(&alpha;/2) es...",
+                options: ["&plusmn;&radic;((1-cos&alpha;)/(1+cos&alpha;))", "&plusmn;&radic;((1+cos&alpha;)/(1-cos&alpha;))", "1 - cos(&alpha;)"],
+                answer: "&plusmn;&radic;((1-cos&alpha;)/(1+cos&alpha;))"
+            },
+            {
+                question: "¿Cuál es el valor de sen(15&deg;)? (Pista: 45&deg; - 30&deg;)",
+                options: ["(&radic;6 - &radic;2) / 4", "(&radic;6 + &radic;2) / 4", "1/2"],
+                answer: "(&radic;6 - &radic;2) / 4"
+            },
+            {
+                question: "¿Cuál es el valor de cos(75&deg;)? (Pista: 45&deg; + 30&deg;)",
+                options: ["(&radic;6 - &radic;2) / 4", "(&radic;6 + &radic;2) / 4", "&radic;3 / 2"],
+                answer: "(&radic;6 - &radic;2) / 4"
+            },
+            {
+                question: "Resuelve: sen<sup>2</sup>(x) = 1 en [0, 360&deg;].",
+                options: ["90&deg; y 270&deg;", "0&deg; y 180&deg;", "Todas las anteriores"],
+                answer: "90&deg; y 270&deg;"
+            },
+            {
+                question: "Si cos(&alpha;) = 0, ¿qué valores puede tomar &alpha;?",
+                options: ["90&deg; + 180&deg;k", "180&deg;k", "90&deg; + 360&deg;k"],
+                answer: "90&deg; + 180&deg;k"
+            },
+            {
+                question: "Un ángulo de 1 radián equivale aproximadamente a...",
+                options: ["57.3&deg;", "90&deg;", "45&deg;"],
+                answer: "57.3&deg;"
+            },
+            {
+                question: "El dominio de y = tan(x) excluye...",
+                options: ["90&deg; + 180&deg;k", "180&deg;k", "0&deg;"],
+                answer: "90&deg; + 180&deg;k"
+            },
+            {
+                question: "El rango (recorrido) de y = sen(x) es...",
+                options: ["[-1, 1]", "(Todos los reales)", "[0, 1]"],
+                answer: "[-1, 1]"
+            },
+            {
+                question: "El rango (recorrido) de y = tan(x) es...",
+                options: ["(Todos los reales)", "[-1, 1]", "(-&pi;/2, &pi;/2)"],
+                answer: "(Todos los reales)"
+            },
+            {
+                question: "Si ves un edificio con un ángulo de elevación de 45&deg; desde 100m, ¿cuál es su altura?",
+                options: ["100 m", "50 m", "100&radic;2 m"],
+                answer: "100 m"
+            },
+            {
+                question: "Transforma 2sen(x)cos(x) = 1/2 en una ecuación simple.",
+                options: ["sen(2x) = 1/2", "cos(2x) = 1/2", "sen(x) = 1/4"],
+                answer: "sen(2x) = 1/2"
+            },
+            {
+                question: "En un triángulo LLL, ¿qué teorema usas para hallar el PRIMER ángulo?",
+                options: ["Teorema del Coseno", "Teorema del Seno", "Pitágoras"],
+                answer: "Teorema del Coseno"
+            },
+            {
+                question: "¿Qué ángulo negativo es coterminal con 300&deg;?",
+                options: ["-60&deg;", "-30&deg;", "-120&deg;"],
+                // ERROR CORREGIDO: Quité la 'S' que estaba aquí
+            },
+            {
+                question: "Si tan(&alpha;) = 3/4, ¿cuál es el valor de cot(&alpha;)?",
+                options: ["4/3", "3/4", "-3/4"],
+                answer: "4/3"
+            },
+            {
+                question: "Simplifica: (sen(x) / csc(x)) + (cos(x) / sec(x))",
+                options: ["1", "sen(x)cos(x)", "2"],
+                answer: "1"
+            },
+            {
+                question: "Si el lado terminal de &alpha; pasa por (3, -4), ¿cuál es sec(&alpha;)?",
+                options: ["5/3", "5/-4", "3/5"],
+                answer: "5/3"
+            }
+        ];
+
+        // Game state
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const NUM_QUESTIONS_TO_PLAY = 10;
+
+        // --- Game Functions ---
+
+        function startGame() {
+            // Reset state
+            score = 0;
+            currentQuestionIndex = 0;
+            feedbackEl.innerHTML = "";
+            scoreEl.textContent = `Puntos: 0`;
+            nextBtn.classList.add('hidden');
+            notesScreen.classList.add('hidden'); // NUEVO: Ocultar notas
+
+            // Shuffle the bank and take the first N questions
+            currentQuestions = questionBank.sort(() => 0.5 - Math.random()).slice(0, NUM_QUESTIONS_TO_PLAY);
+            
+            // Show quiz screen
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+
+            showQuestion();
+        }
+
+        function showQuestion() {
+            // Clear feedback from previous question
+            feedbackEl.innerHTML = "";
+            nextBtn.classList.add('hidden');
+            
+            // Get the current question object
+            const question = currentQuestions[currentQuestionIndex];
+
+            // Update progress text
+            progressEl.textContent = `Pregunta ${currentQuestionIndex + 1} / ${NUM_QUESTIONS_TO_PLAY}`;
+
+            // Update question text (using innerHTML to render entities)
+            questionTextEl.innerHTML = question.question;
+
+            // Clear old options
+            optionsContainerEl.innerHTML = "";
+
+            // Shuffle the options for this question
+            const shuffledOptions = [...question.options].sort(() => 0.5 - Math.random());
+
+            // Create and append option buttons
+            shuffledOptions.forEach(optionText => {
+                const button = document.createElement('button');
+                button.innerHTML = optionText;
+                button.classList.add('option', 'w-full', 'p-4', 'bg-slate-700', 'rounded-lg', 'text-left', 'text-lg', 'transition-all', 'duration-150', 'border-2', 'border-slate-700', 'hover:bg-slate-600', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500');
+                
+                // Add click event listener
+                button.addEventListener('click', () => selectAnswer(button, optionText, question.answer));
+                
+                optionsContainerEl.appendChild(button);
+            });
+        }
+
+        function selectAnswer(buttonEl, selectedOption, correctOption) {
+            // Disable all option buttons to prevent multiple clicks
+            const allOptions = optionsContainerEl.querySelectorAll('.option');
+            allOptions.forEach(btn => {
+                btn.disabled = true;
+                // Show the correct answer
+                if (btn.innerHTML === correctOption) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            // Check if the selected answer is correct
+            if (selectedOption === correctOption) {
+                score++;
+                scoreEl.textContent = `Puntos: ${score}`;
+                feedbackEl.textContent = "¡Correcto!";
+                feedbackEl.classList.add('text-green-400');
+                feedbackEl.classList.remove('text-red-400');
+            } else {
+                // Mark the selected one as incorrect
+                buttonEl.classList.add('incorrect');
+                // MODIFICACIÓN: Mostrar la respuesta correcta cuando se falla
+                feedbackEl.innerHTML = `¡Incorrecto! La respuesta era: <strong>${correctOption}</strong>`;
+                feedbackEl.classList.add('text-red-400');
+                feedbackEl.classList.remove('text-green-400');
+            }
+
+            // MODIFICACIÓN: Mostrar el botón "Siguiente" en lugar de avanzar automáticamente
+            nextBtn.classList.remove('hidden');
+        }
+
+        // NUEVA FUNCIÓN: Para manejar el click en "Siguiente"
+        function handleNextQuestion() {
+            // Ocultar el botón de siguiente
+            nextBtn.classList.add('hidden');
+
+            // Avanzar a la siguiente pregunta
+            currentQuestionIndex++;
+
+            // Comprobar si el juego ha terminado
+            if (currentQuestionIndex < currentQuestions.length) {
+                showQuestion();
+            } else {
+                showEndScreen();
+            }
+        }
+
+        function showEndScreen() {
+            // Hide quiz screen and show end screen
+            quizScreen.classList.add('hidden');
+            notesScreen.classList.add('hidden'); // NUEVO: Ocultar notas
+            endScreen.classList.remove('hidden');
+
+            // Display final score
+            finalScoreEl.textContent = `${score} / ${NUM_QUESTIONS_TO_PLAY}`;
+
+            // Display a message based on the score
+            let message = "";
+            const percentage = (score / NUM_QUESTIONS_TO_PLAY) * 100;
+            if (percentage === 100) {
+                message = "¡Perfecto! ¡Eres un genio de la trigonometría!";
+            } else if (percentage >= 80) {
+                message = "¡Excelente! Estás más que listo.";
+            } else if (percentage >= 50) {
+                message = "¡Buen trabajo! Un último repaso y lo tienes.";
+            } else {
+                message = "¡Sigue repasando! Tú puedes.";
+            }
+            finalMessageEl.textContent = message;
+        }
+
+        // --- Event Listeners ---
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+        nextBtn.addEventListener('click', handleNextQuestion);
+
+        // NUEVO LISTENER PARA SALIR
+        exitQuizBtn.addEventListener('click', () => {
+            quizScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+
+        // NUEVOS LISTENERS para los apuntes
+        notesBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            notesScreen.classList.remove('hidden');
+        });
+        
+        backToStartBtn.addEventListener('click', () => {
+            notesScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        });
+    </script>
+
+</body>
+</html>
